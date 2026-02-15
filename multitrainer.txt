@@ -1,0 +1,224 @@
+
+
+Now we will gernerate multiple models pkl file  -
+
+create a new folder and add a train_model.py file
+
+# Import libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score
+import joblib
+
+# 1️⃣ Load dataset
+data = pd.read_csv("students.csv")
+
+# 2️⃣ Separate features and target
+X = data.drop("pass", axis=1)
+y = data["pass"]
+
+# 3️⃣ Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4️⃣ Feature Scaling (needed for Logistic, KNN, MLP)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Save scaler
+joblib.dump(scaler, "scaler.pkl")
+print("Scaler saved as scaler.pkl")
+
+# 5️⃣ Train and save Logistic Regression
+logistic_model = LogisticRegression()
+logistic_model.fit(X_train_scaled, y_train)
+joblib.dump(logistic_model, "logistic_model.pkl")
+acc = round(accuracy_score(y_test, logistic_model.predict(X_test_scaled)), 2)
+print(f"Logistic Regression trained and saved. Accuracy: {acc}")
+
+# 6️⃣ Train and save Decision Tree
+decision_tree_model = DecisionTreeClassifier(random_state=42)
+decision_tree_model.fit(X_train, y_train)
+joblib.dump(decision_tree_model, "decision_tree_model.pkl")
+acc = round(accuracy_score(y_test, decision_tree_model.predict(X_test)), 2)
+print(f"Decision Tree trained and saved. Accuracy: {acc}")
+
+# 7️⃣ Train and save Random Forest
+random_forest_model = RandomForestClassifier(n_estimators=100, random_state=42)
+random_forest_model.fit(X_train, y_train)
+joblib.dump(random_forest_model, "random_forest_model.pkl")
+acc = round(accuracy_score(y_test, random_forest_model.predict(X_test)), 2)
+print(f"Random Forest trained and saved. Accuracy: {acc}")
+
+# 8️⃣ Train and save K-Nearest Neighbors
+knn_model = KNeighborsClassifier(n_neighbors=5)
+knn_model.fit(X_train_scaled, y_train)
+joblib.dump(knn_model, "knn_model.pkl")
+acc = round(accuracy_score(y_test, knn_model.predict(X_test_scaled)), 2)
+print(f"KNN trained and saved. Accuracy: {acc}")
+
+# 9️⃣ Train and save Neural Network (MLP)
+mlp_model = MLPClassifier(hidden_layer_sizes=(10,10), max_iter=1000, random_state=42)
+mlp_model.fit(X_train_scaled, y_train)
+joblib.dump(mlp_model, "mlp_model.pkl")
+acc = round(accuracy_score(y_test, mlp_model.predict(X_test_scaled)), 2)
+print(f"Neural Network (MLP) trained and saved. Accuracy: {acc}")
+
+print("All models and scaler have been saved successfully!")
+
+
+This will generate 6 model pkl files - each file then can be used to predict result
+
+
+Now create a project folder webapp and then add two files - app.py and templates/index.html file
+
+in app.py add below code - 
+
+from flask import Flask, request, jsonify, render_template
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+
+# 1️⃣ Load models and scaler
+trained_models = {
+    "Logistic Regression": joblib.load("logistic_model.pkl"),
+    "Decision Tree": joblib.load("decision_tree_model.pkl"),
+    "Random Forest": joblib.load("random_forest_model.pkl"),
+    "K-Nearest Neighbors": joblib.load("knn_model.pkl"),
+    "Neural Network (MLP)": joblib.load("mlp_model.pkl")
+}
+
+scaler = joblib.load("scaler.pkl")
+
+# 2️⃣ Home route (optional HTML form)
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+# 3️⃣ API endpoint to predict
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data_json = request.get_json()  # Accept JSON input
+
+        # Convert JSON to array
+        features = np.array([[data_json["study_hours"],
+                              data_json["attendance"],
+                              data_json["sleep"],
+                              data_json["previous_score"],
+                              data_json["internet_usage"]]])
+
+        results = {}
+        for model_name, model in trained_models.items():
+            # Scale features for models that need it
+            if model_name in ["Decision Tree", "Random Forest"]:
+                pred = model.predict(features)[0]
+            else:
+                features_scaled = scaler.transform(features)
+                pred = model.predict(features_scaled)[0]
+
+            results[model_name] = "Pass" if pred == 1 else "Fail"
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+then add below code to index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Pass Predictor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        label { display: block; margin-top: 10px; }
+        input { padding: 5px; width: 200px; }
+        button { margin-top: 15px; padding: 10px 20px; }
+        #result { margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Student Performance Predictor</h2>
+
+    <form id="predictForm">
+        <label for="study_hours">Study Hours:</label>
+        <input type="number" step="any" id="study_hours" name="study_hours" placeholder="Enter study hours">
+
+        <label for="attendance">Attendance (%):</label>
+        <input type="number" step="any" id="attendance" name="attendance" placeholder="Enter attendance percentage">
+
+        <label for="sleep">Sleep Hours:</label>
+        <input type="number" step="any" id="sleep" name="sleep" placeholder="Enter sleep hours">
+
+        <label for="previous_score">Previous Score:</label>
+        <input type="number" step="any" id="previous_score" name="previous_score" placeholder="Enter previous score">
+
+        <label for="internet_usage">Internet Usage (hrs/day):</label>
+        <input type="number" step="any" id="internet_usage" name="internet_usage" placeholder="Enter internet usage">
+
+        <button type="button" onclick="makePrediction()">Predict</button>
+    </form>
+
+    <h3>Predictions from All Models:</h3>
+    <div id="result">Fill in the form and click Predict.</div>
+
+    <script>
+        async function makePrediction() {
+            const form = document.getElementById("predictForm");
+            const formData = new FormData(form);
+
+            // Convert form to JSON
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = parseFloat(value);
+            });
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                // Display result nicely
+                let displayText = '';
+                for (let model in result) {
+                    displayText += `${model}: ${result[model]}\n`;
+                }
+                document.getElementById("result").textContent = displayText;
+
+            } catch (err) {
+                document.getElementById("result").textContent = 'Error: ' + err;
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+run from the folder - python app.py - this will run on localhost - click open the localhost url to view the app
+
+now enter data and it will show the Pass using each model 
+
+
+
+
+
