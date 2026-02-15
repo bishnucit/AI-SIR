@@ -1,0 +1,200 @@
+
+Now we will generate pkl files and use them as webapi - 
+
+
+create a train_model.py and add below code -
+
+# Import libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+import joblib
+import numpy as np
+
+# 1️⃣ Load dataset
+data = pd.read_csv("students.csv")
+
+# 2️⃣ Features and target
+X = data.drop("pass", axis=1)
+y = data["pass"]
+
+# 3️⃣ Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4️⃣ Feature scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Save scaler
+joblib.dump(scaler, "scaler.pkl")
+print("Scaler saved as scaler.pkl")
+
+# 5️⃣ Define models
+models = {
+    "logistic_model": LogisticRegression(),
+    "decision_tree_model": DecisionTreeClassifier(random_state=42),
+    "random_forest_model": RandomForestClassifier(n_estimators=100, random_state=42),
+    "knn_model": KNeighborsClassifier(n_neighbors=5),
+    "mlp_model": MLPClassifier(hidden_layer_sizes=(10,10), max_iter=1000, random_state=42)
+}
+
+# Dictionary to store metrics
+model_metrics = {}
+
+# 6️⃣ Train each model, save, and compute metrics
+for name, model in models.items():
+    # Scale features for certain models
+    if name in ["logistic_model", "knn_model", "mlp_model"]:
+        model.fit(X_train_scaled, y_train)
+        X_test_model = X_test_scaled
+    else:
+        model.fit(X_train, y_train)
+        X_test_model = X_test
+
+    # Save model
+    joblib.dump(model, f"{name}.pkl")
+
+    # Make predictions
+    y_pred = model.predict(X_test_model)
+
+    # Probabilities for ROC-AUC
+    if hasattr(model, "predict_proba"):
+        y_proba = model.predict_proba(X_test_model)[:,1]
+        roc = round(roc_auc_score(y_test, y_proba), 2)
+    else:
+        roc = None
+
+    # Compute metrics
+    metrics = {
+        "accuracy": round(accuracy_score(y_test, y_pred), 2),
+        "precision": round(precision_score(y_test, y_pred), 2),
+        "recall": round(recall_score(y_test, y_pred), 2),
+        "f1_score": round(f1_score(y_test, y_pred), 2),
+        "roc_auc": roc
+    }
+    model_metrics[name] = metrics
+
+    print(f"{name} trained and saved. Metrics: {metrics}")
+
+# 7️⃣ Save all metrics
+joblib.dump(model_metrics, "model_metrics.pkl")
+print("All model metrics saved as model_metrics.pkl")
+
+
+
+run this file and it will generate each model pkl file
+
+
+now create another folder as webapi and add app.py and apicall.py files
+
+add below code in app.py file - 
+
+from flask import Flask, request, jsonify, render_template
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+
+# 1️⃣ Load models and scaler
+trained_models = {
+    "Logistic Regression": joblib.load("logistic_model.pkl"),
+    "Decision Tree": joblib.load("decision_tree_model.pkl"),
+    "Random Forest": joblib.load("random_forest_model.pkl"),
+    "K-Nearest Neighbors": joblib.load("knn_model.pkl"),
+    "Neural Network (MLP)": joblib.load("mlp_model.pkl")
+}
+
+scaler = joblib.load("scaler.pkl")
+model_metrics = joblib.load("model_metrics.pkl")  # Loads metrics for all models
+
+# 2️⃣ Home route (optional HTML form)
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+# 3️⃣ API endpoint for predictions
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data_json = request.get_json()  # Accept JSON input
+
+        # Convert JSON input to 2D array
+        features = np.array([[data_json["study_hours"],
+                              data_json["attendance"],
+                              data_json["sleep"],
+                              data_json["previous_score"],
+                              data_json["internet_usage"]]])
+
+        results = {}
+        for model_name, model in trained_models.items():
+            # Scale features for models that require it
+            if model_name in ["Decision Tree", "Random Forest"]:
+                X_input = features
+            else:
+                X_input = scaler.transform(features)
+
+            # Predict Pass/Fail
+            pred = model.predict(X_input)[0]
+            prediction_text = "Pass" if pred == 1 else "Fail"
+
+            # Fetch metrics from saved metrics
+            # Note: map model_name to keys in model_metrics.pkl
+            key_map = {
+                "Logistic Regression": "logistic_model",
+                "Decision Tree": "decision_tree_model",
+                "Random Forest": "random_forest_model",
+                "K-Nearest Neighbors": "knn_model",
+                "Neural Network (MLP)": "mlp_model"
+            }
+            metrics = model_metrics[key_map[model_name]]
+
+            # Add to results
+            results[model_name] = {
+                "prediction": prediction_text,
+                "accuracy": metrics["accuracy"],
+                "precision": metrics["precision"],
+                "recall": metrics["recall"],
+                "f1_score": metrics["f1_score"],
+                "roc_auc": metrics["roc_auc"]
+            }
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+now add below code in apicall.py file
+
+import requests
+
+url = "http://127.0.0.1:5000/predict"
+data = {
+    "study_hours": 10,
+    "attendance": 85,
+    "sleep": 7,
+    "previous_score": 80,
+    "internet_usage": 3
+}
+
+response = requests.post(url, json=data)
+print(response.json())
+
+now run the app.py in one prompty and apicall.py in another prompt
+
+this will return in json format for all the models.
+
+
+
