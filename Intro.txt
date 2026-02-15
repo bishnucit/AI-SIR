@@ -159,4 +159,97 @@ this will run the index.html on local host - visit the url and enter data and no
 
 
 
+we can also create api to access the result - to do this create a new folder and copy the pkl files then create a app.py file in that folder
+
+
+from flask import Flask, request, jsonify
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+
+# Load model and scaler
+model = joblib.load("student_model.pkl")
+scaler = joblib.load("scaler.pkl")
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        # Receive JSON data
+        data = request.get_json()
+
+        # Extract features
+        study_hours = float(data["study_hours"])
+        attendance = float(data["attendance"])
+        sleep = float(data["sleep"])
+        previous_score = float(data["previous_score"])
+        internet_usage = float(data["internet_usage"])
+
+        # Convert to array and scale
+        features = np.array([[study_hours, attendance, sleep, previous_score, internet_usage]])
+        features_scaled = scaler.transform(features)
+
+        # Predict
+        prediction = model.predict(features_scaled)
+        probability = model.predict_proba(features_scaled)[0][1]  # probability of Pass
+
+        result = {
+            "prediction": "Pass" if prediction[0] == 1 else "Fail",
+            "probability": float(probability)
+        }
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+then run this file in a prompt using python app.py this will run on localhost and if that localhost receives a request it will respond with the result -
+
+
+we can check this in two ways - 
+
+1 - via curl - 
+
+curl -X POST http://127.0.0.1:5000/predict \
+-H "Content-Type: application/json" \
+-d '{"study_hours": 10, "attendance": 85, "sleep": 7, "previous_score": 80, "internet_usage": 3}'
+
+this will return result as Pass and probablity of 0.99 
+
+
+2 - via python requests module
+
+create another file call apicall.py and use below code -
+
+import requests
+
+url = "http://127.0.0.1:5000/predict"
+data = {
+    "study_hours": 10,
+    "attendance": 85,
+    "sleep": 7,
+    "previous_score": 80,
+    "internet_usage": 3
+}
+
+response = requests.post(url, json=data)
+print(response.json())
+
+
+then run in a new prompt - python apicall.py
+this will return the result Pass with probability of 0.99 
+
+
+Here we learned below -
+
+1 - create a dataset
+2 - use the dataset to train a model
+3 - export the model to pkl files
+4 - use the pkl files to create an web app and then access it as html and get result in html on enetering valid data.
+5 - use the pkl files to create api calls where calling with valid data returns proper result.
+
+
 
