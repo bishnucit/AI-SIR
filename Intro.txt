@@ -1,0 +1,162 @@
+
+pip install pandas scikit-learn matplotlib seaborn
+
+
+create a dataset
+
+train the model using python code - create a file train_model.py to save the code.
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+import joblib
+
+# 1️⃣ Load dataset
+data = pd.read_csv("students.csv")
+
+# 2️⃣ Separate features (X) and target (y)
+X = data.drop("pass", axis=1)
+y = data["pass"]
+
+# 3️⃣ Train-Test Split (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 4️⃣ Feature Scaling
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# 5️⃣ Create and Train Model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# 6️⃣ Make Predictions
+y_pred = model.predict(X_test)
+
+# 7️⃣ Evaluate Model
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# 8️⃣ Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
+
+joblib.dump(model, "student_model.pkl")
+joblib.dump(scaler, "scaler.pkl")
+print("Model saved successfully!")
+
+
+This shows a plot and after closing the plot it generates 2 pkl file saving the model.
+
+make sure flask is installed 
+
+then create a new app folder and add the pkl files in that folder 
+
+create an app.py and then create templates/index.html
+
+app.py code -
+
+from flask import Flask, render_template, request
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+
+# Load trained model and scaler
+model = joblib.load("student_model.pkl")
+scaler = joblib.load("scaler.pkl")
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        # Get form values
+        study_hours = float(request.form["study_hours"])
+        attendance = float(request.form["attendance"])
+        sleep = float(request.form["sleep"])
+        previous_score = float(request.form["previous_score"])
+        internet_usage = float(request.form["internet_usage"])
+
+        # Create input array
+        features = np.array([[study_hours, attendance, sleep, previous_score, internet_usage]])
+
+        # Scale
+        features_scaled = scaler.transform(features)
+
+        # Predict
+        prediction = model.predict(features_scaled)
+
+        result = "Pass ✅" if prediction[0] == 1 else "Fail ❌"
+
+        return render_template("index.html", prediction_text=result)
+
+    except Exception as e:
+        return str(e)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+
+
+index.html code
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Pass Predictor</title>
+</head>
+<body>
+    <h2>Student Performance Predictor</h2>
+
+    <form action="/predict" method="post">
+        <label for="study_hours">Study Hours:</label>
+        <input type="number" step="any" id="study_hours" name="study_hours" placeholder="Enter study hours"><br><br>
+
+        <label for="attendance">Attendance (%):</label>
+        <input type="number" step="any" id="attendance" name="attendance" placeholder="Enter attendance percentage"><br><br>
+
+        <label for="sleep">Sleep Hours:</label>
+        <input type="number" step="any" id="sleep" name="sleep" placeholder="Enter sleep hours"><br><br>
+
+        <label for="previous_score">Previous Score:</label>
+        <input type="number" step="any" id="previous_score" name="previous_score" placeholder="Enter previous score"><br><br>
+
+        <label for="internet_usage">Internet Usage (hrs/day):</label>
+        <input type="number" step="any" id="internet_usage" name="internet_usage" placeholder="Enter internet usage"><br><br>
+
+        <button type="submit">Predict</button>
+    </form>
+
+    <h3>{{ prediction_text }}</h3>
+</body>
+</html>
+
+
+
+Now run from webapp folder - python app.py
+
+this will run the index.html on local host - visit the url and enter data and notice the result pass/fail in browser.
+
+
+
+
