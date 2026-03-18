@@ -1,0 +1,15 @@
+needs-
+ollama
+local model 
+arxiv-mcp-server - pip install arxiv-mcp-server
+requests - pip install requests
+
+the program asks an input - then it searches arxiv for that topic and returns 3 results sumarizing one by one
+
+you can increase the result by increasing 3 to as you like to get more result
+for this test its kept as 3 in search_arxiv fn.
+
+a download pdf fn is also there if u would like to store the pdf
+
+this is made for learning purpose only
+created with ai.
