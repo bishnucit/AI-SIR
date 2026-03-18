@@ -11,5 +11,10 @@ for this test its kept as 3 in search_arxiv fn.
 
 a download pdf fn is also there if u would like to store the pdf
 
+to run - 
+
+ollama serve #runs the ollama server
+python main.py
+
 this is made for learning purpose only
 created with ai.
