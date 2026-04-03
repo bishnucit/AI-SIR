@@ -123,7 +123,7 @@ financial_trading_crew = Crew(
 # Run
 # -------------------------------
 inputs = {
-    'stock_selection': 'AAPL',
+    'stock_selection': 'TICKEROFSTOCK',
     'initial_capital': '100000',
     'risk_tolerance': 'Medium',
     'trading_strategy_preference': 'Day Trading',
@@ -133,3 +133,37 @@ inputs = {
 result = financial_trading_crew.kickoff(inputs=inputs)
 
 print(result)
+
+
+"""
+Title: Risk Analysis Report for TICKER Stocks
+
+Executive Summary:
+In this report, we provide an in-depth analysis of the potential risks associated with investing in TICKER stocks and propose appropriate mitigation strategies based on our trading strategy. We follow a balanced approach that seeks opportunities for gains while managing associated risks effectively by leveraging machine learning models.
+
+Methodology:
+Our analysis includes the following steps:
+1. Data Collection
+2. Cleaning & Preparation of data
+3. Feature Engineering
+4. Model Training & Evaluation
+5. Alert Generation & Insights
+6. Real-time analysis and monitoring of TICKER stock market movements.
+
+Potential Risks:
+1. Market volatility: Stock prices can witness significant fluctuations due to various factors such as geopolitical events, economic indicators, and company-specific news that are challenging to predict accurately.
+2. Overfitting & underfitting of machine learning models: During the training process for our models, it is essential to balance generalization ability with accuracy to avoid both overfitting (where the model performs exceptionally well on training data but poorly on unseen data) and underfitting (where the model fails to capture essential patterns in data). By utilizing techniques like cross-validation and hyperparameter tuning, we limit these potential risks.
+3. Data quality: Reliable data is critical for accurate predictions, so it's crucial to gather information from trustworthy sources, ensure minimal missing or inconsistent data, and process data appropriately through cleaning and pre-processing steps.
+4. False alerts & missed opportunities: Generating alerts based on predefined conditions might occasionally produce false positives or miss actual trading opportunities. This can be managed by setting reasonable threshold levels for technical indicators and continuously improving the models to minimize these risks.
+
+Mitigation Strategies:
+1. Monitoring stock market movements in real-time: Continuously track TICKER stocks and generate actionable alerts based on our machine learning models' predictions, keeping stakeholders informed about potential opportunities or risks.
+2. Updating, cleaning, and preparing data: Regularly collect & clean the required data for accurate analysis results to maintain high data quality that better supports informed trading decisions.
+3. Periodic feature engineering: Continuously evaluate feature sets on a monthly basis to introduce new ones when needed as it helps identify emerging trends or patterns in financial time series data.
+4. Quarterly evaluation of machine learning models: Regularly re-evaluate the models to ensure we use the most optimal model for predicting stock trends and improving our ability to make accurate predictions.
+5. Continuous improvement: Iteratively improve our trading strategy by refining models, setting reasonable threshold levels, and optimizing overall performance through data pre-processing techniques.
+
+Conclusion:
+With this comprehensive risk analysis report and the proposed mitigation strategies, we aim to establish a well-rounded approach for assessing risks associated with TICKER stocks and making informed trading decisions while managing associated risks effectively. By leveraging machine learning models, we can identify trends, generate actionable alerts, and share insights with stakeholders to help drive successful outcomes in the rapidly evolving stock market landscape of TICKER
+.
+"""
