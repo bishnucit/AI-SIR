@@ -136,6 +136,20 @@ print(result)
 
 
 """
+
+This code effectively simulates a financial trading team:
+
+Analyzes stock trends
+Designs trading strategies
+Suggests trade execution
+Assesses and mitigates risks
+
+All locally with Ollama LLM + DuckDuckGo for live information.
+
+
+Sample output:
+
+
 Title: Risk Analysis Report for TICKER Stocks
 
 Executive Summary:
