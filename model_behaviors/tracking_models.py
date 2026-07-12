@@ -7,9 +7,9 @@ from tabulate import tabulate
 LOG_FILE = "ollama_logs.jsonl"
 
 MODELS = [
-    "llama3.1:8b",
-    "qwen3.5:latest",
-    "gemma4:latest",   # Change if your model name is different
+    "model1",
+    "model2",
+    "model3",   # Change if your model name is different
 ]
 
 TEST_PROMPTS = [
