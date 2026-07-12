@@ -8,9 +8,9 @@ LOG_FILE = "ollama_logs_normalized.jsonl"
 
 
 MODELS = [
-    "llama3.1:8b",
-    "qwen3.5:latest",
-    "gemma4:latest",
+    "model1",
+    "model2",
+    "model3",
 ]
 
 
